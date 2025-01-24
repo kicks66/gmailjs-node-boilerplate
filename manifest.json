@@ -13,6 +13,9 @@
             "js": [
                 "src/extensionInjector.js"
             ],
+            "css": [
+                "styles/sidebar.css"
+            ],
             "run_at": "document_start"
         }
     ],
@@ -22,11 +25,15 @@
             "dist/gmailJsLoader.js",
             "dist/extension.js",
             "dist/gmailJsLoader.js.map",
-            "dist/extension.js.map"
+            "dist/extension.js.map",
+            "styles/sidebar.css"
         ],
         "matches": ["<all_urls>"]
     }],
     "host_permissions": [
         "https://*/*"
+    ],
+    "permissions": [
+        "activeTab"
     ]
 }
