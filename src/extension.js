@@ -13,6 +13,11 @@ const loaderId = setInterval(() => {
 // Configure your backend URL here
 const BACKEND_URL = 'http://localhost:8000/sidebar/email.php';
 
+// Track processed threads to prevent duplicate requests
+const processedThreads = new Set();
+let lastThreadId = null;
+let debounceTimeout = null;
+
 function createSidebar() {
     const sidebar = document.createElement('div');
     sidebar.id = 'gmail-extension-sidebar';
@@ -114,7 +119,7 @@ function updateSidebarContent(threadData) {
     const content = document.getElementById('sidebar-content');
     if (!content || !threadData) return;
 
-    // First, show loading state
+    // Show loading state
     content.innerHTML = `
         <div style="font-family: monospace; font-size: 12px;">
             <p><strong>Thread ID:</strong> ${threadData.thread_id}</p>
@@ -151,6 +156,32 @@ function updateSidebarContent(threadData) {
         });
 }
 
+function handleEmailView(threadId, threadData) {
+    // Clear any pending debounce
+    if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+    }
+
+    // If we've already processed this thread, don't process it again
+    if (processedThreads.has(threadId)) {
+        return;
+    }
+
+    // If this is a new thread, clear the processed set
+    if (threadId !== lastThreadId) {
+        processedThreads.clear();
+        lastThreadId = threadId;
+    }
+
+    // Debounce the update
+    debounceTimeout = setTimeout(() => {
+        if (threadData) {
+            processedThreads.add(threadId);
+            updateSidebarContent(threadData);
+        }
+    }, 100); // 100ms debounce
+}
+
 function startExtension(gmail) {
     console.log("Extension loading...");
     window.gmail = gmail;
@@ -166,9 +197,7 @@ function startExtension(gmail) {
             const threadId = gmail.new.get.thread_id();
             if (threadId) {
                 const threadData = gmail.new.get.thread_data(threadId);
-                if (threadData) {
-                    updateSidebarContent(threadData);
-                }
+                handleEmailView(threadId, threadData);
             }
         });
     });
